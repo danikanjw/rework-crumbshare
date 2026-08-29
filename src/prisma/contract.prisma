@@ -1,0 +1,38 @@
+// use prisma-next
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  username  String?
+  name      String?
+  createdAt TimestamptzString @default(now())
+  updatedAt temporal.updatedAtString()
+
+  donations FoodDonation[]
+  claims    FoodClaim[]
+}
+
+model FoodDonation {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  quantity    Int
+  location    String
+  image       String?
+  status      String   @default("AVAILABLE")
+  donor       User     @relation(fields: [donorId], references: [id])
+  donorId     Int
+  createdAt   TimestamptzString @default(now())
+  updatedAt   temporal.updatedAtString()
+
+  claims      FoodClaim[]
+}
+
+model FoodClaim {
+  id          Int      @id @default(autoincrement())
+  food        FoodDonation @relation(fields: [foodId], references: [id])
+  foodId      Int
+  recipient   User     @relation(fields: [recipientId], references: [id])
+  recipientId Int
+  createdAt   TimestamptzString @default(now())
+}
