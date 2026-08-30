@@ -6,9 +6,7 @@
 
 This repository is a complete rework of the original CrumbShare project. Instead of simply updating the previous codebase, the application is being rebuilt from scratch using a modern full-stack architecture with Next.js, TypeScript, PostgreSQL, and Prisma.
 
-Check previous object [here](https://github.com/danikanjw/CrumbShare).
----
-
+**Check previous project [here](https://github.com/danikanjw/CrumbShare).**
 
 ## Features
 
@@ -27,7 +25,7 @@ Check previous object [here](https://github.com/danikanjw/CrumbShare).
 
 ---
 
-## 🛠 Tech Stack
+## Tech Stack
 
 ### Frontend
 - Next.js
@@ -51,6 +49,6 @@ Check previous object [here](https://github.com/danikanjw/CrumbShare).
 
 ---
 
-## 👩‍💻 Developer
+## Developer
 
 Developed by **Danika Najwa Ardelia**
