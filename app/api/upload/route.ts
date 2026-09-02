@@ -14,6 +14,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
+    const donationCount = await prisma.food.count({
+      where: {
+        donorId: session.user.id,
+      },
+    });
+
+    if (donationCount >= 5) {
+      return NextResponse.json(
+        {
+          message: "Demo limit reached. You can create up to 5 food donations.",
+        },
+        { status: 403 },
+      );
+    }
+
     // 2. Ambil FormData
     const formData = await request.formData();
 
@@ -22,8 +37,31 @@ export async function POST(request: Request) {
     const quantity = Number(formData.get("quantity"));
     const city = formData.get("city") as string;
     const expiredAt = formData.get("expiredAt") as string;
-    const image = formData.get("image") as File | null;
+    const image = formData.get("image");
 
+    if (!(image instanceof File)) {
+      return NextResponse.json(
+        { message: "Please upload an image." },
+        { status: 400 },
+      );
+    }
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    const maxFileSize = 5 * 1024 * 1024;
+
+    if (!allowedTypes.includes(image.type)) {
+      return NextResponse.json(
+        { message: "Only JPG, PNG, and WebP images are allowed." },
+        { status: 400 },
+      );
+    }
+
+    if (image.size > maxFileSize) {
+      return NextResponse.json(
+        { message: "Image size must be less than 5 MB." },
+        { status: 400 },
+      );
+    }
     if (!Number.isInteger(quantity) || quantity < 1) {
       return NextResponse.json(
         { message: "Quantity must be at least 1." },

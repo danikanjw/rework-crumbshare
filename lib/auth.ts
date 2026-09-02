@@ -23,5 +23,6 @@ export const auth = betterAuth({
 
   emailAndPassword: {
     enabled: true,
+    disableSignUp: process.env.NODE_ENV === "production",
   },
 });
