@@ -6,7 +6,7 @@ export async function proxy(request: NextRequest) {
 
   // Ambil session cookie Better Auth
   const sessionCookie =
-    request.cookies.get("better-auth.session_token")?.value;
+    request.cookies.get("__Secure-better-auth.session_token")?.value;
 
   const isLoggedIn = !!sessionCookie;
 
