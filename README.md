@@ -49,7 +49,7 @@ The production demo uses a separate database and storage environment from develo
 
 Registration is disabled on the production demo to prevent unnecessary data creation.
 
-A dedicated demo account is provided for exploring the application. [Contact me](www.linkedin.com/in/danikanjw)
+A dedicated demo account is provided for exploring the application. [Contact me](https://www.linkedin.com/in/danikanjw/)
 
 
 ## 🔄 Project Background
