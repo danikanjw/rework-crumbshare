@@ -9,10 +9,7 @@ export async function GET(request: Request) {
     });
 
     if (!session?.user) {
-      return NextResponse.json(
-        { message: "Unauthorized." },
-        { status: 401 },
-      );
+      return NextResponse.json({ message: "Unauthorized." }, { status: 401 });
     }
 
     const donations = await prisma.food.findMany({
@@ -27,6 +24,7 @@ export async function GET(request: Request) {
                 id: true,
                 name: true,
                 email: true,
+                phone: true,
               },
             },
           },
@@ -47,9 +45,7 @@ export async function GET(request: Request) {
     return NextResponse.json(
       {
         message:
-          error instanceof Error
-            ? error.message
-            : "Failed to fetch donations.",
+          error instanceof Error ? error.message : "Failed to fetch donations.",
       },
       { status: 500 },
     );

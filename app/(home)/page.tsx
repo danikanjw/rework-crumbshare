@@ -20,21 +20,21 @@ const testimonials = [
   {
     name: "Sarah",
     role: "Food Donor",
-    image: "/images/profile1.jpg",
+    image: "/images/sarah.jpeg",
     comment:
       "It feels great to share excess food and know that it can help someone else.",
   },
   {
     name: "David",
     role: "Recipient",
-    image: "/images/profile2.jpg",
+    image: "/images/david.jpeg",
     comment:
       "CrumbShare makes it easier for me to find food donations around my community.",
   },
   {
     name: "Michael",
     role: "Volunteer",
-    image: "/images/profile3.jpg",
+    image: "/images/michael.jpeg",
     comment:
       "A simple idea with a meaningful impact. I love being part of something meaningful.",
   },

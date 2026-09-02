@@ -16,6 +16,10 @@ type Claim = {
     quantity: number;
     expiredAt: string;
     status: string;
+    donor: {
+      name: string | null;
+      phone: string | null;
+    };
   };
 };
 
@@ -28,6 +32,7 @@ type DonationClaim = {
     id: string;
     name: string | null;
     email: string;
+    phone: string | null;
   };
 };
 
@@ -45,59 +50,99 @@ type Donation = {
 };
 
 export default function HistoryPage() {
-  const [activeTab, setActiveTab] = useState<"claims" | "donations">(
-    "claims",
-  );
+  const [activeTab, setActiveTab] = useState<"claims" | "donations">("claims");
 
   const [claims, setClaims] = useState<Claim[]>([]);
   const [donations, setDonations] = useState<Donation[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [processingClaimId, setProcessingClaimId] = useState<string | null>(
+    null,
+  );
+
+  const [selectedContact, setSelectedContact] = useState<{
+    name: string;
+    phone: string | null;
+    role: "Donor" | "Recipient";
+  } | null>(null);
+
+  const fetchHistory = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const [claimsResponse, donationsResponse] = await Promise.all([
+        fetch("/api/claims"),
+        fetch("/api/donations"),
+      ]);
+
+      const claimsData = await claimsResponse.json();
+      const donationsData = await donationsResponse.json();
+
+      if (!claimsResponse.ok) {
+        throw new Error(claimsData.message || "Failed to fetch your claims.");
+      }
+
+      if (!donationsResponse.ok) {
+        throw new Error(
+          donationsData.message || "Failed to fetch your donations.",
+        );
+      }
+
+      setClaims(claimsData);
+      setDonations(donationsData);
+    } catch (error) {
+      console.error(error);
+
+      setError(
+        error instanceof Error ? error.message : "Something went wrong.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        setLoading(true);
-        setError("");
-
-        const [claimsResponse, donationsResponse] = await Promise.all([
-          fetch("/api/claims"),
-          fetch("/api/donations"),
-        ]);
-
-        const claimsData = await claimsResponse.json();
-        const donationsData = await donationsResponse.json();
-
-        if (!claimsResponse.ok) {
-          throw new Error(
-            claimsData.message || "Failed to fetch your claims.",
-          );
-        }
-
-        if (!donationsResponse.ok) {
-          throw new Error(
-            donationsData.message || "Failed to fetch your donations.",
-          );
-        }
-
-        setClaims(claimsData);
-        setDonations(donationsData);
-      } catch (error) {
-        console.error(error);
-
-        setError(
-          error instanceof Error
-            ? error.message
-            : "Something went wrong.",
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchHistory();
   }, []);
+
+  const handleClaimAction = async (
+    claimId: string,
+    status: "ACCEPTED" | "REJECTED",
+  ) => {
+    try {
+      setProcessingClaimId(claimId);
+      setError("");
+
+      const response = await fetch(`/api/claims/${claimId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          status,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to update claim.");
+      }
+
+      // Refresh history supaya status terbaru langsung terlihat
+      await fetchHistory();
+    } catch (error) {
+      console.error(error);
+
+      setError(
+        error instanceof Error ? error.message : "Something went wrong.",
+      );
+    } finally {
+      setProcessingClaimId(null);
+    }
+  };
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleString("en-US", {
@@ -157,17 +202,15 @@ export default function HistoryPage() {
       <div className="mx-auto max-w-5xl">
         {/* HEADER */}
         <section className="mb-10">
-          <p className="text-sm font-medium text-gray-500">
-            Your activity
-          </p>
+          <p className="text-sm font-medium text-gray-500">Your activity</p>
 
           <h1 className="mt-2 text-3xl font-bold text-gray-900 md:text-5xl">
             History
           </h1>
 
           <p className="mt-3 max-w-2xl text-gray-500">
-            Keep track of the food you have claimed and the donations
-            you have shared.
+            Keep track of the food you have claimed and the donations you have
+            shared.
           </p>
         </section>
 
@@ -202,9 +245,7 @@ export default function HistoryPage() {
         {activeTab === "claims" && (
           <section>
             <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900">
-                My Claims
-              </h2>
+              <h2 className="text-2xl font-bold text-gray-900">My Claims</h2>
 
               <p className="text-sm text-gray-500">
                 {claims.length} claim{claims.length !== 1 ? "s" : ""}
@@ -213,9 +254,7 @@ export default function HistoryPage() {
 
             {claims.length === 0 ? (
               <div className="rounded-3xl bg-white p-10 text-center shadow-sm">
-                <p className="font-medium text-gray-900">
-                  No claims yet
-                </p>
+                <p className="font-medium text-gray-900">No claims yet</p>
 
                 <p className="mt-1 text-sm text-gray-500">
                   Find some food to claim from the discovery page.
@@ -275,9 +314,7 @@ export default function HistoryPage() {
 
                         <div className="mt-5 grid gap-4 sm:grid-cols-2">
                           <div>
-                            <p className="text-xs text-gray-400">
-                              Quantity
-                            </p>
+                            <p className="text-xs text-gray-400">Quantity</p>
 
                             <p className="mt-1 text-sm font-medium text-gray-900">
                               {claim.food.quantity} portions
@@ -285,9 +322,7 @@ export default function HistoryPage() {
                           </div>
 
                           <div>
-                            <p className="text-xs text-gray-400">
-                              Requested
-                            </p>
+                            <p className="text-xs text-gray-400">Requested</p>
 
                             <p className="mt-1 text-sm font-medium text-gray-900">
                               {formatDate(claim.createdAt)}
@@ -313,6 +348,22 @@ export default function HistoryPage() {
                         >
                           View Food
                         </Link>
+
+                        {claim.status === "ACCEPTED" && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setSelectedContact({
+                                name: claim.food.donor.name || "Donor",
+                                phone: claim.food.donor.phone,
+                                role: "Donor",
+                              })
+                            }
+                            className="mt-4 block text-sm font-medium text-gray-900 underline underline-offset-4"
+                          >
+                            View Donor Contact
+                          </button>
+                        )}
                       </div>
                     </div>
                   </article>
@@ -326,9 +377,7 @@ export default function HistoryPage() {
         {activeTab === "donations" && (
           <section>
             <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900">
-                My Donations
-              </h2>
+              <h2 className="text-2xl font-bold text-gray-900">My Donations</h2>
 
               <p className="text-sm text-gray-500">
                 {donations.length} donation
@@ -338,9 +387,7 @@ export default function HistoryPage() {
 
             {donations.length === 0 ? (
               <div className="rounded-3xl bg-white p-10 text-center shadow-sm">
-                <p className="font-medium text-gray-900">
-                  No donations yet
-                </p>
+                <p className="font-medium text-gray-900">No donations yet</p>
 
                 <p className="mt-1 text-sm text-gray-500">
                   Share your extra food with your community.
@@ -405,9 +452,7 @@ export default function HistoryPage() {
 
                           <div className="mt-5 grid gap-4 sm:grid-cols-2">
                             <div>
-                              <p className="text-xs text-gray-400">
-                                Quantity
-                              </p>
+                              <p className="text-xs text-gray-400">Quantity</p>
 
                               <p className="mt-1 text-sm font-medium text-gray-900">
                                 {donation.quantity} portions
@@ -415,9 +460,7 @@ export default function HistoryPage() {
                             </div>
 
                             <div>
-                              <p className="text-xs text-gray-400">
-                                Expires
-                              </p>
+                              <p className="text-xs text-gray-400">Expires</p>
 
                               <p className="mt-1 text-sm font-medium text-gray-900">
                                 {formatDate(donation.expiredAt)}
@@ -437,13 +480,13 @@ export default function HistoryPage() {
                               </span>
                             </div>
 
-                            {pendingClaims.length === 0 ? (
+                            {donation.claims.length === 0 ? (
                               <p className="mt-3 text-sm text-gray-400">
-                                No pending requests.
+                                No claim requests yet.
                               </p>
                             ) : (
                               <div className="mt-4 space-y-3">
-                                {pendingClaims.map((claim) => (
+                                {donation.claims.map((claim) => (
                                   <div
                                     key={claim.claimId}
                                     className="rounded-2xl bg-gray-50 p-4"
@@ -461,8 +504,12 @@ export default function HistoryPage() {
                                         </p>
                                       </div>
 
-                                      <span className="rounded-full bg-yellow-100 px-2.5 py-1 text-xs font-medium text-yellow-700">
-                                        PENDING
+                                      <span
+                                        className={`rounded-full px-2.5 py-1 text-xs font-medium ${getStatusStyle(
+                                          claim.status,
+                                        )}`}
+                                      >
+                                        {claim.status}
                                       </span>
                                     </div>
 
@@ -475,27 +522,66 @@ export default function HistoryPage() {
                                         <p className="mt-1 text-sm text-gray-600">
                                           {claim.note}
                                         </p>
+                                        {claim.status === "ACCEPTED" && (
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              setSelectedContact({
+                                                name:
+                                                  claim.recipient.name ||
+                                                  claim.recipient.email,
+                                                phone: claim.recipient.phone,
+                                                role: "Recipient",
+                                              })
+                                            }
+                                            className="mt-4 text-sm font-medium text-gray-900 underline underline-offset-4"
+                                          >
+                                            View Recipient Contact
+                                          </button>
+                                        )}
                                       </div>
                                     )}
 
                                     {/* ACCEPT / REJECT */}
-                                    <div className="mt-4 flex gap-3">
-                                      <button
-                                        type="button"
-                                        disabled
-                                        className="flex-1 rounded-xl bg-black py-2.5 text-sm font-medium text-white opacity-50"
-                                      >
-                                        Accept
-                                      </button>
+                                    {claim.status === "PENDING" && (
+                                      <div className="mt-4 flex gap-3">
+                                        <button
+                                          type="button"
+                                          disabled={
+                                            processingClaimId === claim.claimId
+                                          }
+                                          onClick={() =>
+                                            handleClaimAction(
+                                              claim.claimId,
+                                              "ACCEPTED",
+                                            )
+                                          }
+                                          className="flex-1 rounded-xl bg-black py-2.5 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+                                        >
+                                          {processingClaimId === claim.claimId
+                                            ? "Processing..."
+                                            : "Accept"}
+                                        </button>
 
-                                      <button
-                                        type="button"
-                                        disabled
-                                        className="flex-1 rounded-xl border border-gray-200 bg-white py-2.5 text-sm font-medium text-gray-700 opacity-50"
-                                      >
-                                        Reject
-                                      </button>
-                                    </div>
+                                        <button
+                                          type="button"
+                                          disabled={
+                                            processingClaimId === claim.claimId
+                                          }
+                                          onClick={() =>
+                                            handleClaimAction(
+                                              claim.claimId,
+                                              "REJECTED",
+                                            )
+                                          }
+                                          className="flex-1 rounded-xl border border-gray-200 bg-white py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+                                        >
+                                          {processingClaimId === claim.claimId
+                                            ? "Processing..."
+                                            : "Reject"}
+                                        </button>
+                                      </div>
+                                    )}
                                   </div>
                                 ))}
                               </div>
@@ -511,6 +597,61 @@ export default function HistoryPage() {
           </section>
         )}
       </div>
+
+      {selectedContact && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-6">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm text-gray-400">Contact</p>
+
+                <h2 className="mt-1 text-2xl font-bold text-gray-900">
+                  {selectedContact.role}
+                </h2>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSelectedContact(null)}
+                className="text-2xl leading-none text-gray-400 hover:text-gray-900"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="mt-6 rounded-2xl bg-gray-50 p-4">
+              <p className="text-xs text-gray-400">Name</p>
+
+              <p className="mt-1 font-medium text-gray-900">
+                {selectedContact.name}
+              </p>
+
+              <p className="mt-4 text-xs text-gray-400">Phone</p>
+
+              {selectedContact.phone ? (
+                <a
+                  href={`tel:${selectedContact.phone}`}
+                  className="mt-1 block font-medium text-gray-900 underline underline-offset-4"
+                >
+                  {selectedContact.phone}
+                </a>
+              ) : (
+                <p className="mt-1 text-sm text-gray-500">
+                  Phone number not provided.
+                </p>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setSelectedContact(null)}
+              className="mt-5 w-full rounded-xl bg-black py-3 text-sm font-medium text-white transition hover:bg-gray-800"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

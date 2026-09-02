@@ -29,6 +29,12 @@ export async function GET(request: Request) {
             quantity: true,
             expiredAt: true,
             status: true,
+            donor: {
+  select: {
+    name: true,
+    phone: true,
+  },
+},
           },
         },
       },
