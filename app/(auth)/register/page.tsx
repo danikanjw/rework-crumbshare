@@ -5,6 +5,30 @@ import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
 
 export default function RegisterPage() {
+  if (process.env.NODE_ENV === "production") {
+    return (
+      <main className="flex min-h-screen items-center justify-center px-6 bg-gradient-to-bl from-[#8d8d8d] via-[#d2d2d2] to-[#ffffff]">
+        <div className="w-full max-w-md rounded-3xl bg-white p-10 text-center shadow-xl">
+          <h1 className="text-3xl font-bold text-gray-900">
+            Registration Unavailable
+          </h1>
+
+          <p className="mt-4 text-sm text-gray-500">
+            Registration is currently disabled for the demo version of
+            CrumbShare.
+          </p>
+
+          <Link
+            href="/login"
+            className="mt-6 inline-block rounded-lg bg-black px-6 py-3 font-medium text-white transition hover:bg-gray-800"
+          >
+            Back to Login
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [phone, setPhone] = useState("");
@@ -54,9 +78,7 @@ export default function RegisterPage() {
           {/* Ganti bagian ini dengan Image component nanti */}
           <div className="absolute inset-0 flex z-10 items-center justify-center">
             <div className="text-center">
-              <h2 className="text-4xl font-bold text-white">
-                CrumbShare
-              </h2>
+              <h2 className="text-4xl font-bold text-white">CrumbShare</h2>
 
               <p className="mt-1 max-w-xs text-white">
                 Share food, reduce waste, and help your community.
