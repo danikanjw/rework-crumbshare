@@ -1,0 +1,121 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String  @id @map("user_id")
+  name          String? @db.VarChar(100)
+  email         String  @unique @db.VarChar(255)
+  emailVerified Boolean @default(false) @map("email_verified")
+  image         String? @map("profile_img") @db.VarChar(500)
+
+  username String @unique @db.VarChar(25)
+  phone    String @unique @db.VarChar(20)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  sessions Session[]
+  accounts Account[]
+
+  foods  Food[]
+  claims Claim[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id         String @id
+  issuer     String?
+  accountId  String
+  providerId String
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  accessToken          String?
+  refreshToken         String?
+  idToken              String?
+  accessTokenExpiresAt DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                String?
+  password             String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+model Food {
+  foodId  String @id @default(dbgenerated("gen_random_uuid()")) @map("food_id") @db.Uuid
+  donorId String @map("donor_id")
+
+  title       String   @db.VarChar(150)
+  description String?
+  quantity    Int
+  city        String   @db.VarChar(100)
+  imageUrl    String?  @map("image_url") @db.VarChar(500)
+  expiredAt   DateTime @map("expired_at") @db.Timestamptz(6)
+  status      String   @db.VarChar(20)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  donor  User    @relation(fields: [donorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  claims Claim[]
+
+  @@map("food")
+}
+
+model Claim {
+  claimId     String @id @default(dbgenerated("gen_random_uuid()")) @map("claim_id") @db.Uuid
+  foodId      String @map("food_id") @db.Uuid
+  recipientId String @map("recipient_id")
+
+  status String  @db.VarChar(20)
+  note   String?
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  food      Food @relation(fields: [foodId], references: [foodId], onDelete: NoAction, onUpdate: NoAction)
+  recipient User @relation(fields: [recipientId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("claim")
+}
